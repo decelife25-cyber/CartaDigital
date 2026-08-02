@@ -113,5 +113,9 @@ export interface Database {
         Update: Partial<Omit<Sugerencia, 'id' | 'created_at'>>
       }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
+    Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }

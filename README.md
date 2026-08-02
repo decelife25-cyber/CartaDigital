@@ -1,32 +1,50 @@
-# React + TypeScript + Vite
+# CartaDigital
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación web completa para cartas digitales de restaurantes con zona pública y panel de administración.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Vite + React + TypeScript
+- Tailwind CSS v3
+- React Router v6 con `HashRouter`
+- Supabase (Auth, Database y Storage)
+- PWA con `vite-plugin-pwa`
+- `@hello-pangea/dnd` para reordenación
+- `papaparse` para importación CSV
 
-## React Compiler
+## Puesta en marcha
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Instala dependencias:
+   ```bash
+   npm install
+   ```
+2. Copia `.env.example` a `.env` y configura tus credenciales de Supabase:
+   ```bash
+   cp .env.example .env
+   ```
+3. Ejecuta el esquema SQL en Supabase usando `supabase/schema.sql`.
+4. (Opcional) Carga datos iniciales con `supabase/seed_camborio.sql` o `seeds/camborio.csv`.
+5. Inicia el entorno local:
+   ```bash
+   npm run dev
+   ```
 
-## Expanding the Oxlint configuration
+## Variables de entorno
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_RESTAURANTE_ID=optional-restaurante-uuid
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Funcionalidades
+
+- Carta pública con búsqueda, vistas por familia y filtrado por alérgenos
+- Modal de plato, sugerencias del día y diseño mobile-first
+- Panel admin con login, CRUD de familias/platos/sugerencias, configuración e importación CSV
+- Modo demo si Supabase no está configurado
+- Preparado para despliegue en GitHub Pages
+
+## Despliegue
+
+El workflow `.github/workflows/deploy.yml` construye y publica automáticamente en GitHub Pages al hacer push a `main`.
