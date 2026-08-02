@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#1A1A1A"/>
+  <circle cx="256" cy="256" r="154" fill="#C8A96E" opacity="0.16"/>
+  <path d="M142 324C198 288 314 288 370 324" stroke="#C8A96E" stroke-width="26" stroke-linecap="round"/>
+  <path d="M166 226C166 177.399 205.399 138 254 138H258C306.601 138 346 177.399 346 226V252H166V226Z" fill="#C8A96E"/>
+  <rect x="198" y="262" width="116" height="32" rx="16" fill="#F8F5EF"/>
+  <text x="256" y="412" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" fill="#F8F5EF">Carta</text>
+</svg>
