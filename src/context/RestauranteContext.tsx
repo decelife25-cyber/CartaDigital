@@ -1,6 +1,6 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-import { demoData } from '../lib/demo-data'
+import { getDemoSnapshot } from '../lib/demo-store'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Alergeno, Familia, PlatoConAlergenos, Restaurante, Sugerencia } from '../types/database'
 
@@ -41,14 +41,16 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
   const [demoMode, setDemoMode] = useState(!isSupabaseConfigured)
 
   const applyDemoData = useCallback((message?: string) => {
-    setRestaurante(demoData.restaurante)
-    setFamilias(demoData.familias)
-    setPlatos(demoData.platos)
-    setAlergenos(demoData.alergenos)
+    const snapshot = getDemoSnapshot()
+
+    setRestaurante(snapshot.restaurante)
+    setFamilias(snapshot.familias)
+    setPlatos(snapshot.platos)
+    setAlergenos(snapshot.alergenos)
     setSugerencias(
-      demoData.sugerencias.map((sugerencia) => ({
+      snapshot.sugerencias.map((sugerencia) => ({
         ...sugerencia,
-        plato: demoData.platos.find((plato) => plato.id === sugerencia.plato_id) ?? null,
+        plato: snapshot.platos.find((plato) => plato.id === sugerencia.plato_id) ?? null,
       })),
     )
     setDemoMode(true)
