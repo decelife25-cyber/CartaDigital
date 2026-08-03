@@ -15,8 +15,8 @@ const navigation = [
 ]
 
 export function AdminLayout() {
-  const { signOut, demoAuth } = useAuth()
-  const { restaurante, demoMode } = useRestaurante()
+  const { signOut } = useAuth()
+  const { restaurante } = useRestaurante()
   const [open, setOpen] = useState(false)
 
   return (
@@ -34,7 +34,7 @@ export function AdminLayout() {
           </div>
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            {demoMode || demoAuth ? 'Modo demo activo. Puedes probar el panel y ver los cambios al instante.' : 'Conectado a Supabase. Tus cambios se guardarán en tiempo real.'}
+            Conectado a Supabase. Tus cambios se guardarán en tiempo real.
           </div>
 
           <nav className="mt-6 space-y-2">

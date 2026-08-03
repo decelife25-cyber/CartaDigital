@@ -3,45 +3,23 @@ import type { Session, User } from '@supabase/supabase-js'
 
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
-interface DemoSession {
-  user: { id: string; email: string }
-  access_token: string
-}
-
 interface AuthContextValue {
-  user: User | DemoSession['user'] | null
-  session: Session | DemoSession | null
+  user: User | null
+  session: Session | null
   loading: boolean
-  demoAuth: boolean
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
-const DEMO_AUTH_KEY = 'carta-digital-demo-auth'
-
-function getDemoSession(): DemoSession | null {
-  const raw = window.localStorage.getItem(DEMO_AUTH_KEY)
-  if (!raw) return null
-
-  try {
-    return JSON.parse(raw) as DemoSession
-  } catch {
-    window.localStorage.removeItem(DEMO_AUTH_KEY)
-    return null
-  }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | DemoSession['user'] | null>(null)
-  const [session, setSession] = useState<Session | DemoSession | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      const demoSession = getDemoSession()
-      setSession(demoSession)
-      setUser(demoSession?.user ?? null)
       setLoading(false)
       return
     }
@@ -65,18 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     if (!isSupabaseConfigured) {
-      if (!email || !password) {
-        throw new Error('Introduce email y contraseña para entrar en modo demo.')
-      }
-
-      const demoSession: DemoSession = {
-        user: { id: 'demo-user', email },
-        access_token: 'demo-token',
-      }
-      window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify(demoSession))
-      setSession(demoSession)
-      setUser(demoSession.user)
-      return
+      throw new Error('Supabase no está configurado. Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para acceder al panel de administración.')
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -87,7 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     if (!isSupabaseConfigured) {
-      window.localStorage.removeItem(DEMO_AUTH_KEY)
       setSession(null)
       setUser(null)
       return
@@ -104,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       loading,
-      demoAuth: !isSupabaseConfigured,
       signIn,
       signOut,
     }),

@@ -1,6 +1,5 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-import { getDemoSnapshot } from '../lib/demo-store'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Alergeno, Familia, PlatoConAlergenos, Restaurante, Sugerencia } from '../types/database'
 
@@ -17,7 +16,6 @@ interface RestauranteContextValue {
   sugerencias: SugerenciaConPlato[]
   loading: boolean
   error: string | null
-  demoMode: boolean
   refreshData: () => Promise<void>
 }
 
@@ -27,7 +25,7 @@ const restauranteIdFromEnv = import.meta.env.VITE_RESTAURANTE_ID as string | und
 
 function normalizeErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
-  return 'No se pudieron cargar los datos del restaurante.'
+  return 'Error desconocido al conectar con Supabase.'
 }
 
 export function RestauranteProvider({ children }: { children: ReactNode }) {
@@ -38,30 +36,13 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
   const [sugerencias, setSugerencias] = useState<SugerenciaConPlato[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [demoMode, setDemoMode] = useState(!isSupabaseConfigured)
-
-  const applyDemoData = useCallback((message?: string) => {
-    const snapshot = getDemoSnapshot()
-
-    setRestaurante(snapshot.restaurante)
-    setFamilias(snapshot.familias)
-    setPlatos(snapshot.platos)
-    setAlergenos(snapshot.alergenos)
-    setSugerencias(
-      snapshot.sugerencias.map((sugerencia) => ({
-        ...sugerencia,
-        plato: snapshot.platos.find((plato) => plato.id === sugerencia.plato_id) ?? null,
-      })),
-    )
-    setDemoMode(true)
-    setError(message ?? 'Configura Supabase para gestionar tu propia carta. Mientras tanto, se muestra una carta de demostración.')
-  }, [])
 
   const refreshData = useCallback(async () => {
     setLoading(true)
+    setError(null)
 
     if (!isSupabaseConfigured) {
-      applyDemoData()
+      setError('Supabase no está configurado. Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en el archivo .env para ver la carta.')
       setLoading(false)
       return
     }
@@ -82,7 +63,7 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
 
       const restauranteData = restauranteResponse.data
       if (!restauranteData) {
-        applyDemoData('No existe ningún restaurante activo todavía. Se ha cargado el modo demo.')
+        setError('No se encontró ningún restaurante activo. Aplica la migración y carga el seed de ejemplo.')
         setLoading(false)
         return
       }
@@ -91,7 +72,7 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
       const [familiasResponse, platosResponse, alergenosResponse, sugerenciasResponse] = await Promise.all([
         supabase.from('familias').select('*').eq('restaurante_id', currentRestauranteId).eq('activo', true).order('orden', { ascending: true }),
         supabase.from('platos').select('*').eq('restaurante_id', currentRestauranteId).eq('activo', true).order('orden', { ascending: true }),
-        supabase.from('alergenos').select('*').order('nombre', { ascending: true }),
+        supabase.from('alergenos').select('*').order('orden', { ascending: true }),
         supabase.from('sugerencias').select('*').eq('restaurante_id', currentRestauranteId).eq('activo', true).order('orden', { ascending: true }),
       ])
 
@@ -133,14 +114,12 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
           plato: platosCompletos.find((plato) => plato.id === sugerencia.plato_id) ?? null,
         })),
       )
-      setDemoMode(false)
-      setError(null)
     } catch (fetchError) {
-      applyDemoData(`No se pudo conectar con Supabase (${normalizeErrorMessage(fetchError)}). Se muestra la carta demo.`)
+      setError(`La carta no está disponible temporalmente. Por favor, inténtalo de nuevo en unos momentos. (${normalizeErrorMessage(fetchError)})`)
     } finally {
       setLoading(false)
     }
-  }, [applyDemoData])
+  }, [])
 
   useEffect(() => {
     void refreshData()
@@ -156,10 +135,9 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
       sugerencias,
       loading,
       error,
-      demoMode,
       refreshData,
     }),
-    [demoMode, error, familias, loading, platos, refreshData, restaurante, sugerencias, alergenos],
+    [error, familias, loading, platos, refreshData, restaurante, sugerencias, alergenos],
   )
 
   return <RestauranteContext.Provider value={value}>{children}</RestauranteContext.Provider>
