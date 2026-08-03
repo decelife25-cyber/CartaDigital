@@ -2,6 +2,8 @@
 
 Aplicación web completa para cartas digitales de restaurantes con zona pública y panel de administración.
 
+Desde esta fase la app usa exclusivamente Supabase como backend y origen de datos (sin modo demo).
+
 ## Stack
 
 - Vite + React + TypeScript
@@ -53,7 +55,7 @@ supabase db push
 
 Para ver la app con datos reales, ejecuta `supabase/seed.sql` en el SQL Editor de Supabase.
 
-Contiene la carta completa de **Cervecería Tapería Camborio** con familias, platos, alérgenos y configuración inicial.
+Contiene la carta completa de **Cervecería Tapería Camborio** con familias, productos, alergenos y configuracion inicial.
 
 Con la CLI:
 
@@ -85,15 +87,15 @@ Las tablas se crean con la migración de `supabase/migrations/`:
 
 | Tabla | Descripción |
 |---|---|
-| `restaurantes` | Configuración del restaurante (nombre, logo, colores, contacto…) |
-| `familias` | Categorías de la carta |
-| `platos` | Productos con precio, foto, disponibilidad y alérgenos |
-| `alergenos` | Catálogo de los 14 alérgenos oficiales de la UE |
-| `plato_alergenos` | Relación N:M entre platos y alérgenos |
+| `configuracion_restaurante` | Configuracion del restaurante (nombre, logo, colores, contacto…) |
+| `familias` | Familias de la carta |
+| `productos` | Productos con precio, foto, disponibilidad y alergenos |
+| `alergenos` | Catalogo de los 14 alergenos oficiales de la UE |
+| `producto_alergeno` | Relacion N:M entre productos y alergenos |
 | `sugerencias` | Platos o propuestas del día destacados en portada |
 
 **RLS (Row Level Security):**
-- Lectura pública (`anon`) para carta, familias, platos y configuración
+- Lectura publica (`anon`) para carta, familias, productos, alergenos y configuracion_restaurante
 - Escritura sólo para usuarios autenticados (panel admin) o mediante `service_role` key
 
 ## Funcionalidades
@@ -107,4 +109,3 @@ Las tablas se crean con la migración de `supabase/migrations/`:
 ## Despliegue
 
 El workflow `.github/workflows/deploy.yml` construye y publica automáticamente en GitHub Pages al hacer push a `main`.
-

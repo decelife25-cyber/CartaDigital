@@ -1,17 +1,18 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-import { isSupabaseConfigured, supabase } from '../lib/supabase'
-import type { Alergeno, Familia, PlatoConAlergenos, Restaurante, Sugerencia } from '../types/database'
+import { listAlergenos, listFamilias, listProductos, listSugerencias, getConfiguracionRestaurante } from '../lib/data'
+import { isSupabaseConfigured } from '../lib/supabase'
+import type { Alergeno, ConfiguracionRestaurante, Familia, ProductoConAlergenos, Sugerencia } from '../types/database'
 
 export interface SugerenciaConPlato extends Sugerencia {
-  plato?: PlatoConAlergenos | null
+  plato?: ProductoConAlergenos | null
 }
 
 interface RestauranteContextValue {
-  restaurante: Restaurante | null
+  restaurante: ConfiguracionRestaurante | null
   restauranteId: string | null
   familias: Familia[]
-  platos: PlatoConAlergenos[]
+  platos: ProductoConAlergenos[]
   alergenos: Alergeno[]
   sugerencias: SugerenciaConPlato[]
   loading: boolean
@@ -21,17 +22,15 @@ interface RestauranteContextValue {
 
 export const RestauranteContext = createContext<RestauranteContextValue | undefined>(undefined)
 
-const restauranteIdFromEnv = import.meta.env.VITE_RESTAURANTE_ID as string | undefined
-
 function normalizeErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
   return 'Error desconocido al conectar con Supabase.'
 }
 
 export function RestauranteProvider({ children }: { children: ReactNode }) {
-  const [restaurante, setRestaurante] = useState<Restaurante | null>(null)
+  const [restaurante, setRestaurante] = useState<ConfiguracionRestaurante | null>(null)
   const [familias, setFamilias] = useState<Familia[]>([])
-  const [platos, setPlatos] = useState<PlatoConAlergenos[]>([])
+  const [platos, setPlatos] = useState<ProductoConAlergenos[]>([])
   const [alergenos, setAlergenos] = useState<Alergeno[]>([])
   const [sugerencias, setSugerencias] = useState<SugerenciaConPlato[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,20 +47,7 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const restauranteQuery = supabase
-        .from('restaurantes')
-        .select('*')
-        .eq('activo', true)
-        .order('created_at', { ascending: true })
-        .limit(1)
-
-      const restauranteResponse = restauranteIdFromEnv
-        ? await supabase.from('restaurantes').select('*').eq('id', restauranteIdFromEnv).single()
-        : await restauranteQuery.maybeSingle()
-
-      if (restauranteResponse.error) throw restauranteResponse.error
-
-      const restauranteData = restauranteResponse.data
+      const restauranteData = await getConfiguracionRestaurante()
       if (!restauranteData) {
         setError('No se encontró ningún restaurante activo. Aplica la migración y carga el seed de ejemplo.')
         setLoading(false)
@@ -69,50 +55,24 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
       }
 
       const currentRestauranteId = restauranteData.id
-      const [familiasResponse, platosResponse, alergenosResponse, sugerenciasResponse] = await Promise.all([
-        supabase.from('familias').select('*').eq('restaurante_id', currentRestauranteId).eq('activo', true).order('orden', { ascending: true }),
-        supabase.from('platos').select('*').eq('restaurante_id', currentRestauranteId).eq('activo', true).order('orden', { ascending: true }),
-        supabase.from('alergenos').select('*').order('orden', { ascending: true }),
-        supabase.from('sugerencias').select('*').eq('restaurante_id', currentRestauranteId).eq('activo', true).order('orden', { ascending: true }),
+      const [familiasData, productosData, catalogo, sugerenciasData] = await Promise.all([
+        listFamilias(currentRestauranteId),
+        listProductos(currentRestauranteId),
+        listAlergenos(),
+        listSugerencias(currentRestauranteId),
       ])
 
-      if (familiasResponse.error) throw familiasResponse.error
-      if (platosResponse.error) throw platosResponse.error
-      if (alergenosResponse.error) throw alergenosResponse.error
-      if (sugerenciasResponse.error) throw sugerenciasResponse.error
-
-      const platosIds = (platosResponse.data ?? []).map((plato) => plato.id)
-      const platoAlergenosResponse = platosIds.length
-        ? await supabase.from('plato_alergenos').select('plato_id, alergeno_id').in('plato_id', platosIds)
-        : { data: [], error: null }
-
-      if (platoAlergenosResponse.error) throw platoAlergenosResponse.error
-
-      const catalogo = alergenosResponse.data ?? []
-      const catalogoById = Object.fromEntries(catalogo.map((item) => [item.id, item]))
-      const familiasById = Object.fromEntries((familiasResponse.data ?? []).map((item) => [item.id, item]))
-      const alergenosByPlato = (platoAlergenosResponse.data ?? []).reduce<Record<string, Alergeno[]>>((acc, row) => {
-        const alergeno = catalogoById[row.alergeno_id]
-        if (!alergeno) return acc
-        acc[row.plato_id] = [...(acc[row.plato_id] || []), alergeno]
-        return acc
-      }, {})
-
-      const platosCompletos: PlatoConAlergenos[] = (platosResponse.data ?? []).map((plato) => ({
-        ...plato,
-        familia: plato.familia_id ? familiasById[plato.familia_id] ?? null : null,
-        alergenos: alergenosByPlato[plato.id] ?? [],
-      }))
-
       setRestaurante(restauranteData)
-      setFamilias(familiasResponse.data ?? [])
-      setPlatos(platosCompletos)
+      setFamilias(familiasData.filter((familia) => familia.activo))
+      setPlatos(productosData.filter((producto) => producto.activo))
       setAlergenos(catalogo)
       setSugerencias(
-        (sugerenciasResponse.data ?? []).map((sugerencia) => ({
+        (sugerenciasData ?? [])
+          .filter((sugerencia) => sugerencia.activo)
+          .map((sugerencia) => ({
           ...sugerencia,
-          plato: platosCompletos.find((plato) => plato.id === sugerencia.plato_id) ?? null,
-        })),
+          plato: productosData.find((producto) => producto.id === sugerencia.producto_id) ?? null,
+          })),
       )
     } catch (fetchError) {
       setError(`La carta no está disponible temporalmente. Por favor, inténtalo de nuevo en unos momentos. (${normalizeErrorMessage(fetchError)})`)

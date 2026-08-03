@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE IF NOT EXISTS restaurantes (
+CREATE TABLE IF NOT EXISTS configuracion_restaurante (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nombre TEXT NOT NULL,
   logo_url TEXT,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS restaurantes (
 
 CREATE TABLE IF NOT EXISTS familias (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  restaurante_id UUID REFERENCES restaurantes(id) ON DELETE CASCADE,
+  configuracion_restaurante_id UUID REFERENCES configuracion_restaurante(id) ON DELETE CASCADE,
   nombre TEXT NOT NULL,
   descripcion TEXT,
   activo BOOLEAN DEFAULT true,
@@ -33,9 +33,9 @@ CREATE TABLE IF NOT EXISTS alergenos (
   descripcion TEXT
 );
 
-CREATE TABLE IF NOT EXISTS platos (
+CREATE TABLE IF NOT EXISTS productos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  restaurante_id UUID REFERENCES restaurantes(id) ON DELETE CASCADE,
+  configuracion_restaurante_id UUID REFERENCES configuracion_restaurante(id) ON DELETE CASCADE,
   familia_id UUID REFERENCES familias(id) ON DELETE SET NULL,
   nombre TEXT NOT NULL,
   descripcion TEXT,
@@ -47,16 +47,16 @@ CREATE TABLE IF NOT EXISTS platos (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS plato_alergenos (
-  plato_id UUID REFERENCES platos(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS producto_alergeno (
+  producto_id UUID REFERENCES productos(id) ON DELETE CASCADE,
   alergeno_id UUID REFERENCES alergenos(id) ON DELETE CASCADE,
-  PRIMARY KEY (plato_id, alergeno_id)
+  PRIMARY KEY (producto_id, alergeno_id)
 );
 
 CREATE TABLE IF NOT EXISTS sugerencias (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  restaurante_id UUID REFERENCES restaurantes(id) ON DELETE CASCADE,
-  plato_id UUID REFERENCES platos(id) ON DELETE SET NULL,
+  configuracion_restaurante_id UUID REFERENCES configuracion_restaurante(id) ON DELETE CASCADE,
+  producto_id UUID REFERENCES productos(id) ON DELETE SET NULL,
   nombre TEXT,
   descripcion TEXT,
   precio NUMERIC(10,2),
@@ -65,38 +65,38 @@ CREATE TABLE IF NOT EXISTS sugerencias (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE restaurantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE configuracion_restaurante ENABLE ROW LEVEL SECURITY;
 ALTER TABLE familias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alergenos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE platos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE plato_alergenos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE productos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE producto_alergeno ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sugerencias ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Public read restaurantes" ON restaurantes;
+DROP POLICY IF EXISTS "Public read configuracion_restaurante" ON configuracion_restaurante;
 DROP POLICY IF EXISTS "Public read familias" ON familias;
 DROP POLICY IF EXISTS "Public read alergenos" ON alergenos;
-DROP POLICY IF EXISTS "Public read platos" ON platos;
-DROP POLICY IF EXISTS "Public read plato_alergenos" ON plato_alergenos;
+DROP POLICY IF EXISTS "Public read productos" ON productos;
+DROP POLICY IF EXISTS "Public read producto_alergeno" ON producto_alergeno;
 DROP POLICY IF EXISTS "Public read sugerencias" ON sugerencias;
-DROP POLICY IF EXISTS "Admin all restaurantes" ON restaurantes;
+DROP POLICY IF EXISTS "Admin all configuracion_restaurante" ON configuracion_restaurante;
 DROP POLICY IF EXISTS "Admin all familias" ON familias;
 DROP POLICY IF EXISTS "Admin all alergenos" ON alergenos;
-DROP POLICY IF EXISTS "Admin all platos" ON platos;
-DROP POLICY IF EXISTS "Admin all plato_alergenos" ON plato_alergenos;
+DROP POLICY IF EXISTS "Admin all productos" ON productos;
+DROP POLICY IF EXISTS "Admin all producto_alergeno" ON producto_alergeno;
 DROP POLICY IF EXISTS "Admin all sugerencias" ON sugerencias;
 
-CREATE POLICY "Public read restaurantes" ON restaurantes FOR SELECT USING (activo = true);
+CREATE POLICY "Public read configuracion_restaurante" ON configuracion_restaurante FOR SELECT USING (activo = true);
 CREATE POLICY "Public read familias" ON familias FOR SELECT USING (activo = true);
 CREATE POLICY "Public read alergenos" ON alergenos FOR SELECT USING (true);
-CREATE POLICY "Public read platos" ON platos FOR SELECT USING (activo = true);
-CREATE POLICY "Public read plato_alergenos" ON plato_alergenos FOR SELECT USING (true);
+CREATE POLICY "Public read productos" ON productos FOR SELECT USING (activo = true);
+CREATE POLICY "Public read producto_alergeno" ON producto_alergeno FOR SELECT USING (true);
 CREATE POLICY "Public read sugerencias" ON sugerencias FOR SELECT USING (activo = true);
 
-CREATE POLICY "Admin all restaurantes" ON restaurantes FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Admin all configuracion_restaurante" ON configuracion_restaurante FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Admin all familias" ON familias FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Admin all alergenos" ON alergenos FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Admin all platos" ON platos FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Admin all plato_alergenos" ON plato_alergenos FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Admin all productos" ON productos FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Admin all producto_alergeno" ON producto_alergeno FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Admin all sugerencias" ON sugerencias FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 INSERT INTO alergenos (nombre, sigla, descripcion) VALUES
