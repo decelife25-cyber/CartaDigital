@@ -69,9 +69,9 @@ export function MenuPage() {
         <div className="rounded-[2rem] border border-red-100 bg-white/80 px-10 py-12 text-center shadow-soft">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-amber-700">CartaDigital</p>
           <h1 className="mt-3 font-display text-4xl text-slate-900">Carta no disponible</h1>
-          <p className="mt-4 max-w-md text-base leading-7 text-slate-600">
-            La carta digital no está disponible temporalmente. Por favor, inténtalo de nuevo en unos momentos.
-          </p>
+          <pre className="mt-4 max-w-md whitespace-pre-wrap break-all text-left text-base leading-7 text-slate-600">
+            {error ?? 'Error desconocido'}
+          </pre>
         </div>
       </main>
     )
