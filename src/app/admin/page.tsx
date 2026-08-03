@@ -1,11 +1,16 @@
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
 import ProductoEditor from "@/components/admin/ProductoEditor";
 
 import { obtenerFamilias } from "@/lib/admin/familias";
-import { obtenerProductos } from "@/lib/admin/productos";
+
+import {
+  obtenerProductos,
+  guardarProducto,
+} from "@/lib/admin/productos";
+
 import {
   obtenerAlergenos,
   obtenerAlergenosProducto,
@@ -80,12 +85,14 @@ export default function AdminPage() {
 
       onGuardar={async (p) => {
 
-        console.log("Guardar", p);
+        await guardarProducto(p);
 
         await guardarAlergenosProducto(
           p.id,
           p.alergenos
         );
+
+        alert("Producto guardado");
 
       }}
 
