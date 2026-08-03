@@ -12,39 +12,99 @@ Aplicación web completa para cartas digitales de restaurantes con zona pública
 - `@hello-pangea/dnd` para reordenación
 - `papaparse` para importación CSV
 
-## Puesta en marcha
+## Puesta en marcha local
 
-1. Instala dependencias:
-   ```bash
-   npm install
-   ```
-2. Copia `.env.example` a `.env` y configura tus credenciales de Supabase:
-   ```bash
-   cp .env.example .env
-   ```
-3. Ejecuta el esquema SQL en Supabase usando `supabase/schema.sql`.
-4. (Opcional) Carga datos iniciales con `supabase/seed_camborio.sql` o `seeds/camborio.csv`.
-5. Inicia el entorno local:
-   ```bash
-   npm run dev
-   ```
+### 1. Instala dependencias
+
+```bash
+npm install
+```
+
+### 2. Configura las variables de entorno
+
+Copia `.env.example` a `.env` y rellena tus credenciales de Supabase:
+
+```bash
+cp .env.example .env
+```
+
+Edita `.env`:
+
+```env
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+# Opcional: si tienes varios restaurantes, fija el UUID del tuyo
+VITE_RESTAURANTE_ID=
+```
+
+Estas claves las encuentras en tu proyecto de Supabase → **Settings → API**.
+
+### 3. Aplica la migración en Supabase
+
+Copia el contenido de `supabase/migrations/20240801000000_initial_schema.sql` y ejecútalo en el **SQL Editor** de Supabase. Esto crea todas las tablas, activa RLS y carga el catálogo de alérgenos.
+
+También puedes usar la CLI de Supabase (si la tienes instalada):
+
+```bash
+supabase db push
+```
+
+### 4. Carga el seed de ejemplo
+
+Para ver la app con datos reales, ejecuta `supabase/seed.sql` en el SQL Editor de Supabase.
+
+Contiene la carta completa de **Cervecería Tapería Camborio** con familias, platos, alérgenos y configuración inicial.
+
+Con la CLI:
+
+```bash
+supabase db reset  # aplica migraciones + seed automáticamente
+```
+
+### 5. Inicia el entorno local
+
+```bash
+npm run dev
+```
+
+Abre [http://localhost:5173](http://localhost:5173) para ver la carta pública.
+
+El panel de administración está en `/admin`. Las credenciales de acceso las creas en Supabase → **Authentication → Users**.
 
 ## Variables de entorno
 
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_RESTAURANTE_ID=optional-restaurante-uuid
-```
+| Variable | Descripción | Requerida |
+|---|---|---|
+| `VITE_SUPABASE_URL` | URL de tu proyecto Supabase | Sí |
+| `VITE_SUPABASE_ANON_KEY` | Clave pública anon de Supabase | Sí |
+| `VITE_RESTAURANTE_ID` | UUID del restaurante (si hay varios) | No |
+
+## Estructura de base de datos
+
+Las tablas se crean con la migración de `supabase/migrations/`:
+
+| Tabla | Descripción |
+|---|---|
+| `restaurantes` | Configuración del restaurante (nombre, logo, colores, contacto…) |
+| `familias` | Categorías de la carta |
+| `platos` | Productos con precio, foto, disponibilidad y alérgenos |
+| `alergenos` | Catálogo de los 14 alérgenos oficiales de la UE |
+| `plato_alergenos` | Relación N:M entre platos y alérgenos |
+| `sugerencias` | Platos o propuestas del día destacados en portada |
+
+**RLS (Row Level Security):**
+- Lectura pública (`anon`) para carta, familias, platos y configuración
+- Escritura sólo para usuarios autenticados (panel admin) o mediante `service_role` key
 
 ## Funcionalidades
 
 - Carta pública con búsqueda, vistas por familia y filtrado por alérgenos
-- Modal de plato, sugerencias del día y diseño mobile-first
-- Panel admin con login, CRUD de familias/platos/sugerencias, configuración e importación CSV
-- Modo demo si Supabase no está configurado
-- Preparado para despliegue en GitHub Pages
+- Modal de plato con alérgenos detallados
+- Sugerencias del día en portada
+- Diseño mobile-first, instalable como PWA
+- Panel admin con login Supabase Auth, CRUD completo de familias/platos/sugerencias, configuración e importación CSV
 
 ## Despliegue
 
 El workflow `.github/workflows/deploy.yml` construye y publica automáticamente en GitHub Pages al hacer push a `main`.
+

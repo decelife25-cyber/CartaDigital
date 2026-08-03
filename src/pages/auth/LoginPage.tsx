@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext'
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, demoAuth } = useAuth()
+  const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -47,7 +47,7 @@ export function LoginPage() {
             </div>
             <h2 className="mt-6 font-display text-4xl text-slate-900">Iniciar sesión</h2>
             <p className="mt-3 text-slate-600">
-              Accede al panel para gestionar el restaurante. {demoAuth ? 'Sin Supabase configurado puedes entrar en modo demo con cualquier email y contraseña.' : 'Usa las credenciales de Supabase Auth.'}
+              Accede al panel para gestionar el restaurante. Usa las credenciales de Supabase Auth.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">

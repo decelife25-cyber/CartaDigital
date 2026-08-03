@@ -11,7 +11,7 @@ import { SugerenciasSection } from '../../components/public/SugerenciasSection'
 type ViewMode = 'classic' | 'family'
 
 export function MenuPage() {
-  const { restaurante, familias, platos, alergenos, sugerencias, loading, error, demoMode } = useRestaurante()
+  const { restaurante, familias, platos, alergenos, sugerencias, loading, error } = useRestaurante()
   const [viewMode, setViewMode] = useState<ViewMode>('classic')
   const [query, setQuery] = useState('')
   const [selectedAllergenIds, setSelectedAllergenIds] = useState<string[]>([])
@@ -63,6 +63,20 @@ export function MenuPage() {
     )
   }
 
+  if (!restaurante && error) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-12">
+        <div className="rounded-[2rem] border border-red-100 bg-white/80 px-10 py-12 text-center shadow-soft">
+          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-amber-700">CartaDigital</p>
+          <h1 className="mt-3 font-display text-4xl text-slate-900">Carta no disponible</h1>
+          <p className="mt-4 max-w-md text-base leading-7 text-slate-600">
+            La carta digital no está disponible temporalmente. Por favor, inténtalo de nuevo en unos momentos.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
       <section className="overflow-hidden rounded-[2.5rem] border border-white/70 bg-texture p-6 shadow-soft sm:p-8 lg:p-10">
@@ -72,7 +86,7 @@ export function MenuPage() {
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white" style={{ backgroundColor: restaurante?.color_principal || '#c8a96e' }}>
                 {restaurante?.nombre.slice(0, 2).toUpperCase() || 'CD'}
               </span>
-              <span>{demoMode ? 'Modo demo activo' : 'Carta online'}</span>
+              <span>Carta online</span>
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.45em] text-amber-700">Carta digital</p>
