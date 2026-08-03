@@ -9,7 +9,7 @@ export interface RedesSociales {
   [key: string]: Json | undefined
 }
 
-export interface Restaurante {
+export interface ConfiguracionRestaurante {
   id: string
   nombre: string
   logo_url: string | null
@@ -23,16 +23,18 @@ export interface Restaurante {
   dominio: string | null
   activo: boolean
   created_at: string
+  updated_at: string
 }
 
 export interface Familia {
   id: string
-  restaurante_id: string
+  configuracion_restaurante_id: string
   nombre: string
   descripcion: string | null
   activo: boolean
   orden: number
   created_at: string
+  updated_at: string
 }
 
 export interface Alergeno {
@@ -41,11 +43,13 @@ export interface Alergeno {
   sigla: string
   icono_url?: string | null
   descripcion: string | null
+  created_at: string
+  updated_at: string
 }
 
-export interface Plato {
+export interface Producto {
   id: string
-  restaurante_id: string
+  configuracion_restaurante_id: string
   familia_id: string | null
   nombre: string
   descripcion: string | null
@@ -55,62 +59,69 @@ export interface Plato {
   agotado: boolean
   orden: number
   created_at: string
+  updated_at: string
 }
 
-export interface PlatoAlergeno {
-  plato_id: string
+export interface ProductoAlergeno {
+  producto_id: string
   alergeno_id: string
 }
 
 export interface Sugerencia {
   id: string
-  restaurante_id: string
-  plato_id: string | null
+  configuracion_restaurante_id: string
+  producto_id: string | null
   nombre: string | null
   descripcion: string | null
   precio: number | null
   activo: boolean
   orden: number
   created_at: string
+  updated_at: string
 }
 
-export interface PlatoConAlergenos extends Plato {
+export interface ProductoConAlergenos extends Producto {
   familia?: Familia | null
   alergenos: Alergeno[]
 }
 
+export type Restaurante = ConfiguracionRestaurante
+export type Plato = Producto
+export type PlatoAlergeno = ProductoAlergeno
+export type PlatoConAlergenos = ProductoConAlergenos
+
 export interface Database {
   public: {
     Tables: {
-      restaurantes: {
-        Row: Restaurante
-        Insert: Partial<Omit<Restaurante, 'id' | 'created_at'>>
-        Update: Partial<Omit<Restaurante, 'id' | 'created_at'>>
+      configuracion_restaurante: {
+        Row: ConfiguracionRestaurante
+        Insert: Partial<Omit<ConfiguracionRestaurante, 'id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<ConfiguracionRestaurante, 'id' | 'created_at' | 'updated_at'>>
       }
       familias: {
         Row: Familia
-        Insert: Partial<Omit<Familia, 'id' | 'created_at'>>
-        Update: Partial<Omit<Familia, 'id' | 'created_at'>>
+        Insert: Partial<Omit<Familia, 'id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<Familia, 'id' | 'created_at' | 'updated_at'>>
       }
       alergenos: {
         Row: Alergeno
-        Insert: Partial<Omit<Alergeno, 'id'>>
-        Update: Partial<Omit<Alergeno, 'id'>>
+        Insert: Partial<Omit<Alergeno, 'id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<Alergeno, 'id' | 'created_at' | 'updated_at'>>
       }
-      platos: {
-        Row: Plato
-        Insert: Partial<Omit<Plato, 'id' | 'created_at'>>
-        Update: Partial<Omit<Plato, 'id' | 'created_at'>>
+      productos: {
+        Row: Producto
+        Insert: Partial<Omit<Producto, 'id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<Producto, 'id' | 'created_at' | 'updated_at'>>
       }
-      plato_alergenos: {
-        Row: PlatoAlergeno
-        Insert: PlatoAlergeno
-        Update: Partial<PlatoAlergeno>
+      producto_alergeno: {
+        Row: ProductoAlergeno
+        Insert: ProductoAlergeno
+        Update: Partial<ProductoAlergeno>
       }
       sugerencias: {
         Row: Sugerencia
-        Insert: Partial<Omit<Sugerencia, 'id' | 'created_at'>>
-        Update: Partial<Omit<Sugerencia, 'id' | 'created_at'>>
+        Insert: Partial<Omit<Sugerencia, 'id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<Sugerencia, 'id' | 'created_at' | 'updated_at'>>
       }
     }
     Views: Record<string, never>

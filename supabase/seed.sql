@@ -8,7 +8,7 @@
 -- ============================================================
 
 WITH restaurante AS (
-  INSERT INTO restaurantes (
+  INSERT INTO configuracion_restaurante (
     nombre,
     color_principal,
     descripcion,
@@ -42,11 +42,11 @@ WITH restaurante AS (
     ('Vinos y Cavas',        'Copas y botellas para cada ocasión.',                       9),
     ('Bebidas',              'Refrescos, zumos y cafés.',                                10)
 ), familias_insert AS (
-  INSERT INTO familias (restaurante_id, nombre, descripcion, orden, activo)
+  INSERT INTO familias (configuracion_restaurante_id, nombre, descripcion, orden, activo)
   SELECT restaurante.id, fb.nombre, fb.descripcion, fb.orden, true
   FROM restaurante, familias_base fb
-  RETURNING id, nombre, restaurante_id
-), platos_base(familia, nombre, precio, descripcion, alergenos_siglas, orden) AS (
+  RETURNING id, nombre, configuracion_restaurante_id
+), productos_base(familia, nombre, precio, descripcion, alergenos_siglas, orden) AS (
   VALUES
     ('Entrantes Fríos',     'Jamón ibérico de bellota',       18.50, 'Corte fino acompañado de pan cristal y tomate rallado.',             'GLU',             1),
     ('Entrantes Fríos',     'Queso manchego curado',           9.50, 'Tabla de queso manchego D.O. con aceite virgen extra.',              'LAC',             2),
@@ -96,17 +96,17 @@ WITH restaurante AS (
     ('Bebidas',             'Zumo natural',                    4.00, 'Zumo exprimido al momento.',                                       '',                3),
     ('Bebidas',             'Café solo',                       1.80, 'Café espresso intenso.',                                           '',                4),
     ('Bebidas',             'Café con leche',                  2.20, 'Espresso con leche cremosa.',                                      'LAC',             5)
-), platos_insert AS (
-  INSERT INTO platos (restaurante_id, familia_id, nombre, descripcion, precio, activo, agotado, orden)
-  SELECT fi.restaurante_id, fi.id, pb.nombre, pb.descripcion, pb.precio, true, false, pb.orden
-  FROM platos_base pb
+), productos_insert AS (
+  INSERT INTO productos (configuracion_restaurante_id, familia_id, nombre, descripcion, precio, activo, agotado, orden)
+  SELECT fi.configuracion_restaurante_id, fi.id, pb.nombre, pb.descripcion, pb.precio, true, false, pb.orden
+  FROM productos_base pb
   JOIN familias_insert fi ON fi.nombre = pb.familia
   RETURNING id, nombre
 )
-INSERT INTO plato_alergenos (plato_id, alergeno_id)
+INSERT INTO producto_alergeno (producto_id, alergeno_id)
 SELECT pi.id, a.id
-FROM platos_insert pi
-JOIN platos_base pb ON pb.nombre = pi.nombre
+FROM productos_insert pi
+JOIN productos_base pb ON pb.nombre = pi.nombre
 JOIN LATERAL unnest(string_to_array(NULLIF(pb.alergenos_siglas, ''), ';')) AS sigla(sigla) ON true
 JOIN alergenos a ON a.sigla = sigla.sigla
 ON CONFLICT DO NOTHING;
