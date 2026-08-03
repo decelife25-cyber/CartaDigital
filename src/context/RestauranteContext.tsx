@@ -23,8 +23,26 @@ interface RestauranteContextValue {
 export const RestauranteContext = createContext<RestauranteContextValue | undefined>(undefined)
 
 function normalizeErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message
-  return 'Error desconocido al conectar con Supabase.'
+  if (!error) return 'Error desconocido'
+
+  if (typeof error === 'object' && error !== null) {
+    const e = error as Record<string, unknown>
+
+    return JSON.stringify(
+      {
+        message: e.message,
+        details: e.details,
+        hint: e.hint,
+        code: e.code,
+        status: e.status,
+        name: e.name
+      },
+      null,
+      2
+    )
+  }
+
+  return String(error)
 }
 
 export function RestauranteProvider({ children }: { children: ReactNode }) {
@@ -75,7 +93,8 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
           })),
       )
     } catch (fetchError) {
-      setError(`La carta no está disponible temporalmente. Por favor, inténtalo de nuevo en unos momentos. (${normalizeErrorMessage(fetchError)})`)
+      console.error('SUPABASE ERROR', fetchError)
+      setError(normalizeErrorMessage(fetchError))
     } finally {
       setLoading(false)
     }
