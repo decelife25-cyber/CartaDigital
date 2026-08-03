@@ -67,10 +67,12 @@ export function RestauranteProvider({ children }: { children: ReactNode }) {
       setPlatos(productosData.filter((producto) => producto.activo))
       setAlergenos(catalogo)
       setSugerencias(
-        (sugerenciasData ?? []).map((sugerencia) => ({
+        (sugerenciasData ?? [])
+          .filter((sugerencia) => sugerencia.activo)
+          .map((sugerencia) => ({
           ...sugerencia,
           plato: productosData.find((producto) => producto.id === sugerencia.producto_id) ?? null,
-        })),
+          })),
       )
     } catch (fetchError) {
       setError(`La carta no está disponible temporalmente. Por favor, inténtalo de nuevo en unos momentos. (${normalizeErrorMessage(fetchError)})`)
