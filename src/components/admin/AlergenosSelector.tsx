@@ -1,6 +1,6 @@
  "use client";
 
-import type { Alergeno } from "@/types/alergeno";
+import type { Alergeno } from "../../types/alergeno";
 
 interface Props {
   alergenos: Alergeno[];
