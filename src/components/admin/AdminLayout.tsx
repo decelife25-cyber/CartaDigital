@@ -1,4 +1,4 @@
-import { LayoutDashboard, Layers3, LogOut, Settings, Sparkles, Soup, Upload, ExternalLink, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, Layers3, LogOut, Settings, Sparkles, Soup, MonitorSmartphone, ExternalLink, PanelLeftClose, PanelLeftOpen, Wheat } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
@@ -10,8 +10,9 @@ const navigation = [
   { to: '/admin/familias', label: 'Familias', icon: Layers3 },
   { to: '/admin/platos', label: 'Platos', icon: Soup },
   { to: '/admin/sugerencias', label: 'Sugerencias', icon: Sparkles },
+  { to: '/admin/alergenos', label: 'Alérgenos', icon: Wheat },
   { to: '/admin/config', label: 'Configuración', icon: Settings },
-  { to: '/admin/importar', label: 'Importar', icon: Upload },
+  { to: '/admin/preview', label: 'Vista previa', icon: MonitorSmartphone },
 ]
 
 export function AdminLayout() {
@@ -20,24 +21,41 @@ export function AdminLayout() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
-        <aside className={`fixed inset-y-4 left-4 z-40 w-72 rounded-[2rem] border border-white/80 bg-slate-950 p-5 text-white shadow-2xl transition lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-[120%]'} lg:block`}>
-          <div className="flex items-center justify-between gap-3">
+    <div className="min-h-screen bg-slate-950 text-slate-300 font-sans selection:bg-amber-500/30">
+      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-4 sm:px-6 lg:px-8 lg:py-8">
+
+        {/* Sidebar */}
+        <aside
+          className={`fixed inset-y-4 left-4 z-40 w-72 rounded-[2rem] border border-white/5 bg-slate-900/80 backdrop-blur-xl p-5 shadow-2xl transition-transform duration-300 lg:static lg:translate-x-0 flex flex-col ${
+            open ? 'translate-x-0' : '-translate-x-[120%]'
+          } lg:block`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3 mb-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-300">CartaDigital</p>
-              <h1 className="mt-2 font-display text-3xl">{restaurante?.nombre || 'Admin'}</h1>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-amber-400/90">
+                CartaDigital
+              </p>
+              <h1 className="mt-1 font-display text-2xl text-white truncate max-w-[12rem]">
+                {restaurante?.nombre || 'Admin Panel'}
+              </h1>
             </div>
-            <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-white/10 p-2 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-full border border-white/10 p-2 lg:hidden text-slate-400 hover:text-white hover:bg-white/5"
+            >
               <PanelLeftClose className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            Conectado a Supabase. Tus cambios se guardarán en tiempo real.
+          {/* Info banner */}
+          <div className="mb-6 rounded-2xl border border-amber-500/10 bg-amber-500/5 p-4 text-xs text-amber-200/80 leading-relaxed">
+            Modo administrador. Los cambios se reflejarán en la carta pública al instante.
           </div>
 
-          <nav className="mt-6 space-y-2">
+          {/* Navigation */}
+          <nav className="space-y-1.5 flex-1">
             {navigation.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
@@ -45,8 +63,10 @@ export function AdminLayout() {
                 end={end}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    isActive ? 'bg-white text-slate-950' : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-amber-400 text-slate-950 shadow-sm [&>svg]:text-slate-900 [&>svg]:opacity-100'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-white [&>svg]:opacity-70'
                   }`
                 }
               >
@@ -56,20 +76,21 @@ export function AdminLayout() {
             ))}
           </nav>
 
-          <div className="mt-8 space-y-3">
+          {/* Footer Actions */}
+          <div className="mt-8 space-y-2 pt-6 border-t border-white/5">
             <a
-              href="#/"
+              href="/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+              className="flex items-center justify-between rounded-2xl border border-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
             >
               Ver carta pública
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4 opacity-50" />
             </a>
             <button
               type="button"
               onClick={() => void signOut()}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300"
             >
               <LogOut className="h-4 w-4" />
               Cerrar sesión
@@ -77,17 +98,36 @@ export function AdminLayout() {
           </div>
         </aside>
 
-        {open && <button type="button" aria-label="Cerrar menú" className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" onClick={() => setOpen(false)} />}
+        {/* Mobile Backdrop */}
+        {open && (
+          <div
+            className="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-sm lg:hidden transition-opacity"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+        )}
 
-        <div className="min-w-0 flex-1">
-          <div className="mb-4 flex items-center justify-between gap-3 lg:hidden">
-            <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">
+        {/* Main Content Area */}
+        <main className="min-w-0 flex-1 lg:pl-6 pb-20 lg:pb-0">
+          {/* Mobile Header */}
+          <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 border border-white/5 px-4 py-3 text-sm font-medium text-white shadow-sm active:scale-95 transition-transform"
+            >
               <PanelLeftOpen className="h-4 w-4" /> Menú
             </button>
-            <span className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">{restaurante?.nombre || 'Panel'}</span>
+            <span className="rounded-full bg-slate-900 border border-white/5 px-4 py-2 text-sm font-medium text-amber-400 shadow-sm truncate max-w-[50vw]">
+              {restaurante?.nombre || 'Panel'}
+            </span>
           </div>
-          <Outlet />
-        </div>
+
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Outlet />
+          </div>
+        </main>
+
       </div>
     </div>
   )

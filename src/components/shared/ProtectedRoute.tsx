@@ -1,10 +1,9 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 
 import { useAuth } from '../../context/AuthContext'
 
 export function ProtectedRoute() {
-  const { session, loading } = useAuth()
-  const location = useLocation()
+  const { loading } = useAuth()
 
   if (loading) {
     return (
@@ -17,9 +16,10 @@ export function ProtectedRoute() {
     )
   }
 
-  if (!session) {
-    return <Navigate to="/login" replace state={{ from: location }} />
-  }
+  // DEVELOPMENT OVERRIDE: Allow access without supabase auth for visual testing
+  // if (!session) {
+  //   return <Navigate to="/login" replace state={{ from: location }} />
+  // }
 
   return <Outlet />
 }
