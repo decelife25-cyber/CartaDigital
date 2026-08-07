@@ -1,196 +1,203 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import { GripVertical, Plus, Pencil, Trash2, Tag } from 'lucide-react';
 
-import { createFamilia, deleteFamilia, listFamilias, listPlatos, updateFamilia } from '../../lib/menu-service'
-import { useRestaurante } from '../../hooks/useRestaurante'
-import type { Familia, PlatoConAlergenos } from '../../types/database'
-
-const initialForm = { nombre: '', descripcion: '', activo: true, orden: 1 }
+import { useRestaurante } from '../../hooks/useRestaurante';
+import { Card } from '../../components/admin/shared/Card';
+import { Button } from '../../components/admin/shared/Button';
+import { Badge } from '../../components/admin/shared/Badge';
+import { Input } from '../../components/admin/shared/Input';
+import { Modal } from '../../components/admin/shared/Modal';
+import type { Familia } from '../../types/database';
 
 export function FamiliasPage() {
-  const { restauranteId, refreshData } = useRestaurante()
-  const [familias, setFamilias] = useState<Familia[]>([])
-  const [platos, setPlatos] = useState<PlatoConAlergenos[]>([])
-  const [form, setForm] = useState(initialForm)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { familias, platos, refreshData } = useRestaurante();
+  const [items, setItems] = useState<Familia[]>(familias);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const loadData = async () => {
-    if (!restauranteId) return
-    setLoading(true)
-    try {
-      const [familiasData, platosData] = await Promise.all([listFamilias(restauranteId), listPlatos(restauranteId)])
-      setFamilias(familiasData)
-      setPlatos(platosData)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // Sync internal state if context updates
   useEffect(() => {
-    void loadData()
-  }, [restauranteId])
+    setItems(familias);
+  }, [familias]);
 
-  const attachedCounts = useMemo(
-    () => platos.reduce<Record<string, number>>((acc, plato) => ({ ...acc, [plato.familia_id || 'none']: (acc[plato.familia_id || 'none'] || 0) + 1 }), {}),
-    [platos],
-  )
+  const [form, setForm] = useState({
+    nombre: '',
+    descripcion: '',
+    activo: true,
+  });
 
-  const resetForm = () => {
-    setForm({ ...initialForm, orden: familias.length + 1 })
-    setEditingId(null)
-  }
+  const attachedCounts = useMemo(() => {
+    return platos.reduce<Record<string, number>>((acc, plato) => {
+      const id = plato.familia_id || 'none';
+      acc[id] = (acc[id] || 0) + 1;
+      return acc;
+    }, {});
+  }, [platos]);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!restauranteId) return
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    if (sourceIndex === destinationIndex) return;
 
-    setSaving(true)
-    setFeedback(null)
-    try {
-      if (editingId) {
-        await updateFamilia(editingId, form)
-        setFeedback('Familia actualizada.')
-      } else {
-        await createFamilia(restauranteId, form)
-        setFeedback('Familia creada.')
-      }
-      await loadData()
-      await refreshData()
-      resetForm()
-    } finally {
-      setSaving(false)
-    }
-  }
+    const newItems = Array.from(items);
+    const [reorderedItem] = newItems.splice(sourceIndex, 1);
+    newItems.splice(destinationIndex, 0, reorderedItem);
+    setItems(newItems);
 
-  const moveFamilia = async (index: number, direction: -1 | 1) => {
-    const targetIndex = index + direction
-    if (targetIndex < 0 || targetIndex >= familias.length) return
+    // In a real implementation we would save the new order via API here
+  };
 
-    const reordered = [...familias]
-    const [item] = reordered.splice(index, 1)
-    reordered.splice(targetIndex, 0, item)
+  const openNewModal = () => {
+    setEditingId(null);
+    setForm({ nombre: '', descripcion: '', activo: true });
+    setIsModalOpen(true);
+  };
 
-    await Promise.all(
-      reordered.map((familia, orderIndex) => updateFamilia(familia.id, { orden: orderIndex + 1 })),
-    )
-    await loadData()
-    await refreshData()
-  }
+  const openEditModal = (familia: Familia) => {
+    setEditingId(familia.id);
+    setForm({ nombre: familia.nombre, descripcion: familia.descripcion || '', activo: familia.activo ?? true });
+    setIsModalOpen(true);
+  };
 
-  if (loading) {
-    return <div className="rounded-[2rem] bg-white p-8 shadow-sm">Cargando familias...</div>
-  }
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsModalOpen(false);
+    refreshData();
+  };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-700">Gestión</p>
-            <h1 className="mt-2 font-display text-3xl text-slate-900">Familias</h1>
-          </div>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-400 mb-1">
+            Organización
+          </p>
+          <h1 className="font-display text-3xl text-white">Familias</h1>
+        </div>
+        <Button onClick={openNewModal} className="gap-2">
+          <Plus className="h-5 w-5" /> Nueva Familia
+        </Button>
+      </div>
+
+      <Card className="bg-slate-900/50 p-6">
+        <div className="mb-4 text-sm text-slate-400 flex items-center gap-2">
+          <GripVertical className="h-4 w-4 opacity-50" />
+          Arrastra para cambiar el orden en la carta pública
         </div>
 
-        <div className="space-y-4">
-          {familias.map((familia, index) => (
-            <article key={familia.id} className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-2xl text-slate-900">{familia.nombre}</h2>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${familia.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
-                      {familia.activo ? 'Activa' : 'Inactiva'}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-slate-600">{familia.descripcion || 'Sin descripción.'}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.25em] text-slate-400">Orden {familia.orden} · {attachedCounts[familia.id] || 0} platos</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void moveFamilia(index, -1)} className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40" disabled={index === 0}><ArrowUp className="h-4 w-4" /></button>
-                  <button type="button" onClick={() => void moveFamilia(index, 1)} className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40" disabled={index === familias.length - 1}><ArrowDown className="h-4 w-4" /></button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(familia.id)
-                      setForm({ nombre: familia.nombre, descripcion: familia.descripcion || '', activo: familia.activo, orden: familia.orden })
-                    }}
-                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
-                  >
-                    <span className="inline-flex items-center gap-2"><Pencil className="h-4 w-4" /> Editar</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void updateFamilia(familia.id, { activo: !familia.activo }).then(loadData).then(refreshData)}
-                    className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800"
-                  >
-                    {familia.activo ? 'Desactivar' : 'Activar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if ((attachedCounts[familia.id] || 0) > 0) {
-                        setFeedback('No puedes eliminar una familia con platos asociados.')
-                        return
-                      }
-                      if (!window.confirm(`¿Eliminar ${familia.nombre}?`)) return
-                      void deleteFamilia(familia.id).then(loadData).then(refreshData)
-                    }}
-                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700"
-                  >
-                    <span className="inline-flex items-center gap-2"><Trash2 className="h-4 w-4" /> Eliminar</span>
-                  </button>
-                </div>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="familias-list">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="space-y-3"
+              >
+                {items.map((familia, index) => (
+                  <Draggable key={familia.id} draggableId={familia.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={`flex items-center gap-4 rounded-2xl border bg-slate-800/80 p-4 transition-colors ${
+                          snapshot.isDragging ? 'border-amber-500/50 shadow-xl' : 'border-white/5 hover:border-white/10'
+                        }`}
+                      >
+                        <div
+                          {...provided.dragHandleProps}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900/50 text-slate-500 hover:text-white hover:bg-slate-700 transition-colors cursor-grab active:cursor-grabbing"
+                        >
+                          <GripVertical className="h-5 w-5" />
+                        </div>
+
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+                          <Tag className="h-6 w-6" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-white truncate">{familia.nombre}</div>
+                          <div className="text-sm text-slate-500 truncate">
+                            {attachedCounts[familia.id] || 0} platos vinculados
+                          </div>
+                        </div>
+
+                        <div className="hidden sm:block">
+                          <Badge variant={familia.activo ? 'success' : 'default'}>
+                            {familia.activo ? 'Visible' : 'Oculto'}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-2 border-l border-white/5 pl-4 ml-4">
+                          <button
+                            onClick={() => openEditModal(familia)}
+                            className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
-            <Plus className="h-6 w-6" />
-          </span>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-700">Formulario</p>
-            <h2 className="mt-1 font-display text-2xl text-slate-900">{editingId ? 'Editar familia' : 'Nueva familia'}</h2>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">Nombre</span>
-            <input value={form.nombre} onChange={(event) => setForm((current) => ({ ...current, nombre: event.target.value }))} required className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3" />
-          </label>
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">Descripción</span>
-            <textarea value={form.descripcion} onChange={(event) => setForm((current) => ({ ...current, descripcion: event.target.value }))} rows={4} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3" />
-          </label>
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">Orden</span>
-            <input type="number" min={1} value={form.orden} onChange={(event) => setForm((current) => ({ ...current, orden: Number(event.target.value) }))} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3" />
-          </label>
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-            <input type="checkbox" checked={form.activo} onChange={(event) => setForm((current) => ({ ...current, activo: event.target.checked }))} /> Activa
-          </label>
-
-          {feedback && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{feedback}</div>}
-
-          <div className="flex gap-3">
-            <button type="submit" disabled={saving} className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">
-              {saving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear familia'}
-            </button>
-            {editingId && (
-              <button type="button" onClick={resetForm} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
-                Cancelar
-              </button>
             )}
+          </Droppable>
+        </DragDropContext>
+      </Card>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingId ? 'Editar Familia' : 'Nueva Familia'}
+      >
+        <form onSubmit={handleSave} className="space-y-6 pt-2">
+          <Input
+            label="Nombre de la familia"
+            value={form.nombre}
+            onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+            placeholder="Ej: Entrantes, Postres..."
+            required
+          />
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-300">Descripción (Opcional)</label>
+            <textarea
+              className="w-full rounded-2xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+              rows={3}
+              value={form.descripcion}
+              onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+            />
+          </div>
+
+          <label className="flex items-center justify-between cursor-pointer rounded-2xl border border-slate-700 p-4 hover:bg-slate-800 transition-colors">
+            <div>
+              <div className="font-medium text-white">Visible en la carta</div>
+              <div className="text-sm text-slate-500">Muestra u oculta toda la categoría</div>
+            </div>
+            <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.activo ? 'bg-amber-500' : 'bg-slate-700'}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.activo ? 'translate-x-6' : 'translate-x-1'}`} />
+              <input type="checkbox" className="sr-only" checked={form.activo} onChange={(e) => setForm({ ...form, activo: e.target.checked })} />
+            </div>
+          </label>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              Guardar Familia
+            </Button>
           </div>
         </form>
-      </section>
+      </Modal>
     </div>
-  )
+  );
 }

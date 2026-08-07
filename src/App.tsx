@@ -12,8 +12,10 @@ import { DashboardPage } from './pages/admin/DashboardPage'
 import { FamiliasPage as AdminFamiliasPage } from './pages/admin/FamiliasPage'
 import { PlatosPage } from './pages/admin/PlatosPage'
 import { SugerenciasPage } from './pages/admin/SugerenciasPage'
+import { AlergenosPage } from './pages/admin/AlergenosPage'
 import { ConfigPage } from './pages/admin/ConfigPage'
 import { ImportPage } from './pages/admin/ImportPage'
+import { PreviewPage } from './pages/admin/PreviewPage'
 import { LoginPage } from './pages/auth/LoginPage'
 
 import { Home } from './pages/public/Home'
@@ -49,8 +51,10 @@ function App() {
                   <Route path="familias" element={<AdminFamiliasPage />} />
                   <Route path="platos" element={<PlatosPage />} />
                   <Route path="sugerencias" element={<SugerenciasPage />} />
+                  <Route path="alergenos" element={<AlergenosPage />} />
                   <Route path="config" element={<ConfigPage />} />
                   <Route path="importar" element={<ImportPage />} />
+                  <Route path="preview" element={<PreviewPage />} />
                 </Route>
               </Route>
 
