@@ -1,37 +1,25 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockFamilies, mockDishes, type Allergen } from '../../data/mockData';
+import { useRestaurante } from '../../hooks/useRestaurante';
 import { Info } from 'lucide-react';
+import { PLACEHOLDER_FAMILY_IMAGE, PLACEHOLDER_DISH_IMAGE } from '../../lib/placeholders';
+import type { Alergeno } from '../../types/database';
 
 export function DishList() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { familias, platos } = useRestaurante();
 
-  const family = mockFamilies.find(f => f.id === id);
-  const dishes = mockDishes.filter(d => d.familyId === id);
+  const family = familias.find(f => f.id === id);
+  const dishes = platos.filter(d => d.familia_id === id);
 
   if (!family) {
-    return <div className="p-4 text-center">Categoría no encontrada</div>;
+    return <div className="p-4 text-center">Familia no encontrada</div>;
   }
 
-  const getAllergenIcon = (allergen: Allergen) => {
-    // For now returning simple text badge or emoji
-    const icons: Record<Allergen, string> = {
-      gluten: '🌾',
-      crustaceans: '🦐',
-      eggs: '🥚',
-      fish: '🐟',
-      peanuts: '🥜',
-      soybeans: '🫘',
-      milk: '🥛',
-      nuts: '🌰',
-      celery: '🥬',
-      mustard: '🌭',
-      sesame: '🌱',
-      sulphites: '🍷',
-      lupin: '🌼',
-      molluscs: '🐙'
-    };
-    return icons[allergen] || '⚠️';
+  const getAllergenIcon = (allergen: Alergeno) => {
+    // If the allergen has an icon_url, we could render an img tag.
+    // Since we're using emojis in the DB for sigla often, we can use that, or a default emoji.
+    return allergen.sigla || '⚠️';
   };
 
   return (
@@ -40,19 +28,19 @@ export function DishList() {
       <div className="relative h-48 w-full">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${family.image})` }}
+          style={{ backgroundImage: `url(${PLACEHOLDER_FAMILY_IMAGE})` }}
         />
         <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 flex items-center justify-center">
           <h2 className="text-4xl font-display font-bold text-white tracking-wider drop-shadow-lg">
-            {family.name}
+            {family.nombre}
           </h2>
         </div>
       </div>
 
       <div className="p-4 space-y-4">
         {dishes.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No hay platos disponibles en esta categoría.</p>
+          <p className="text-gray-500 text-center py-8">No hay platos disponibles en esta familia.</p>
         ) : (
           dishes.map((dish) => (
             <button
@@ -62,8 +50,8 @@ export function DishList() {
             >
               <div className="w-32 sm:w-40 shrink-0">
                 <img
-                  src={dish.image}
-                  alt={dish.name}
+                  src={dish.foto_url || PLACEHOLDER_DISH_IMAGE}
+                  alt={dish.nombre}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -71,19 +59,19 @@ export function DishList() {
               <div className="flex-1 p-4 flex flex-col justify-between">
                 <div>
                   <h3 className="font-display font-bold text-lg text-gray-900 dark:text-white leading-tight mb-1">
-                    {dish.name}
+                    {dish.nombre}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
-                    {dish.shortDescription}
+                    {dish.descripcion}
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-brand text-lg">
-                      {dish.price.toFixed(2)}€
+                      {(dish.precio || 0).toFixed(2)}€
                     </span>
-                    {!dish.available && (
+                    {dish.agotado && (
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-full">
                         Agotado
                       </span>
@@ -91,9 +79,9 @@ export function DishList() {
                   </div>
 
                   <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-lg ml-auto">
-                    {dish.allergens.length > 0 ? (
-                      dish.allergens.map(a => (
-                        <span key={a} title={a} className="text-sm">
+                    {dish.alergenos.length > 0 ? (
+                      dish.alergenos.map(a => (
+                        <span key={a.id} title={a.nombre} className="text-sm">
                           {getAllergenIcon(a)}
                         </span>
                       ))

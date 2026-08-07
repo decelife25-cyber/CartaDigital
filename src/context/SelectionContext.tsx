@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
-import type { Dish } from '../data/mockData';
+import type { ProductoConAlergenos } from '../types/database';
 
 export interface SelectionItem {
-  dish: Dish;
+  dish: ProductoConAlergenos;
   quantity: number;
 }
 
 interface SelectionContextType {
   items: SelectionItem[];
-  addItem: (dish: Dish, quantity?: number) => void;
+  addItem: (dish: ProductoConAlergenos, quantity?: number) => void;
   removeItem: (dishId: string) => void;
   updateQuantity: (dishId: string, quantity: number) => void;
   clearSelection: () => void;
@@ -21,7 +21,7 @@ const SelectionContext = createContext<SelectionContextType | undefined>(undefin
 export function SelectionProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<SelectionItem[]>([]);
 
-  const addItem = (dish: Dish, quantity = 1) => {
+  const addItem = (dish: ProductoConAlergenos, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((item) => item.dish.id === dish.id);
       if (existing) {
@@ -54,7 +54,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   };
 
   const totalItems = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
-  const totalPrice = useMemo(() => items.reduce((sum, item) => sum + (item.dish.price * item.quantity), 0), [items]);
+  const totalPrice = useMemo(() => items.reduce((sum, item) => sum + ((item.dish.precio || 0) * item.quantity), 0), [items]);
 
   return (
     <SelectionContext.Provider
