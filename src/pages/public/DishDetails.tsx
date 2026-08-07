@@ -1,29 +1,26 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockDishes, type Allergen } from '../../data/mockData';
+import { useRestaurante } from '../../hooks/useRestaurante';
 import { useSelection } from '../../context/SelectionContext';
 import { ChevronLeft, Minus, Plus, Info } from 'lucide-react';
+import { PLACEHOLDER_DISH_IMAGE } from '../../lib/placeholders';
+import type { Alergeno } from '../../types/database';
 
 export function DishDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addItem } = useSelection();
+  const { platos } = useRestaurante();
   const [quantity, setQuantity] = useState(1);
 
-  const dish = mockDishes.find(d => d.id === id);
+  const dish = platos.find(d => d.id === id);
 
   if (!dish) {
     return <div className="p-4 text-center">Plato no encontrado</div>;
   }
 
-  const getAllergenIcon = (allergen: Allergen) => {
-    const icons: Record<Allergen, string> = {
-      gluten: '🌾', crustaceans: '🦐', eggs: '🥚', fish: '🐟',
-      peanuts: '🥜', soybeans: '🫘', milk: '🥛', nuts: '🌰',
-      celery: '🥬', mustard: '🌭', sesame: '🌱', sulphites: '🍷',
-      lupin: '🌼', molluscs: '🐙'
-    };
-    return icons[allergen] || '⚠️';
+  const getAllergenIcon = (allergen: Alergeno) => {
+    return allergen.sigla || '⚠️';
   };
 
   const handleAddToCart = () => {
@@ -42,8 +39,8 @@ export function DishDetails() {
           <ChevronLeft size={24} />
         </button>
         <img
-          src={dish.image}
-          alt={dish.name}
+          src={dish.foto_url || PLACEHOLDER_DISH_IMAGE}
+          alt={dish.nombre}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -53,50 +50,32 @@ export function DishDetails() {
       <div className="flex-1 p-6 -mt-6 relative bg-white dark:bg-gray-900 rounded-t-3xl shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)]">
         <div className="flex justify-between items-start mb-4">
           <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white pr-4">
-            {dish.name}
+            {dish.nombre}
           </h1>
           <span className="text-2xl font-bold text-brand shrink-0">
-            {dish.price.toFixed(2)}€
+            {(dish.precio || 0).toFixed(2)}€
           </span>
         </div>
 
         <p className="text-gray-600 dark:text-gray-300 text-lg mb-6 leading-relaxed">
-          {dish.description}
+          {dish.descripcion}
         </p>
 
-        {dish.ingredients.length > 0 && (
-          <div className="mb-8">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              Ingredientes Principales
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {dish.ingredients.map((ing, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium"
-                >
-                  {ing}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {dish.allergens.length > 0 && (
+        {dish.alergenos.length > 0 && (
           <div className="mb-8">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Info size={18} />
               Alérgenos
             </h3>
             <div className="flex flex-wrap gap-3">
-              {dish.allergens.map(a => (
+              {dish.alergenos.map(a => (
                 <div
-                  key={a}
+                  key={a.id}
                   className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg border border-red-100 dark:border-red-900/50"
-                  title={a}
+                  title={a.nombre}
                 >
                   <span className="text-xl">{getAllergenIcon(a)}</span>
-                  <span className="text-sm font-medium capitalize">{a}</span>
+                  <span className="text-sm font-medium capitalize">{a.nombre}</span>
                 </div>
               ))}
             </div>
@@ -130,7 +109,7 @@ export function DishDetails() {
             className="flex-1 bg-brand hover:bg-brand/90 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95 flex justify-between items-center"
           >
             <span>Añadir a mi selección</span>
-            <span>{(dish.price * quantity).toFixed(2)}€</span>
+            <span>{((dish.precio || 0) * quantity).toFixed(2)}€</span>
           </button>
         </div>
       </div>

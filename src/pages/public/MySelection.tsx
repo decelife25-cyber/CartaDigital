@@ -1,18 +1,13 @@
 import { useSelection } from '../../context/SelectionContext';
 import { Minus, Plus, Trash2, Info, Share2, Copy } from 'lucide-react';
-import type { Allergen } from '../../data/mockData';
+import { PLACEHOLDER_DISH_IMAGE } from '../../lib/placeholders';
+import type { Alergeno } from '../../types/database';
 
 export function MySelection() {
   const { items, updateQuantity, removeItem, clearSelection, totalPrice } = useSelection();
 
-  const getAllergenIcon = (allergen: Allergen) => {
-    const icons: Record<Allergen, string> = {
-      gluten: '🌾', crustaceans: '🦐', eggs: '🥚', fish: '🐟',
-      peanuts: '🥜', soybeans: '🫘', milk: '🥛', nuts: '🌰',
-      celery: '🥬', mustard: '🌭', sesame: '🌱', sulphites: '🍷',
-      lupin: '🌼', molluscs: '🐙'
-    };
-    return icons[allergen] || '⚠️';
+  const getAllergenIcon = (allergen: Alergeno) => {
+    return allergen.sigla || '⚠️';
   };
 
   const handleShare = () => {
@@ -71,14 +66,14 @@ export function MySelection() {
                 >
                   <div className="flex gap-4">
                     <img
-                      src={item.dish.image}
-                      alt={item.dish.name}
+                      src={item.dish.foto_url || PLACEHOLDER_DISH_IMAGE}
+                      alt={item.dish.nombre}
                       className="w-24 h-24 object-cover rounded-xl shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start gap-2 mb-1">
                         <h3 className="font-display font-bold text-gray-900 dark:text-white truncate">
-                          {item.dish.name}
+                          {item.dish.nombre}
                         </h3>
                         <button
                           onClick={() => removeItem(item.dish.id)}
@@ -89,15 +84,15 @@ export function MySelection() {
                       </div>
 
                       <div className="flex items-center gap-1 mb-2">
-                        {item.dish.allergens.map(a => (
-                          <span key={a} title={a} className="text-xs">
+                        {item.dish.alergenos.map(a => (
+                          <span key={a.id} title={a.nombre} className="text-xs">
                             {getAllergenIcon(a)}
                           </span>
                         ))}
                       </div>
 
                       <div className="font-semibold text-brand">
-                        {item.dish.price.toFixed(2)}€
+                        {(item.dish.precio || 0).toFixed(2)}€
                       </div>
                     </div>
                   </div>
@@ -124,7 +119,7 @@ export function MySelection() {
                     <div className="text-right">
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Subtotal</div>
                       <div className="font-bold text-gray-900 dark:text-white">
-                        {(item.dish.price * item.quantity).toFixed(2)}€
+                        {((item.dish.precio || 0) * item.quantity).toFixed(2)}€
                       </div>
                     </div>
                   </div>
@@ -150,7 +145,7 @@ export function MySelection() {
                 </button>
                 <button
                   onClick={() => {
-                    const text = items.map(i => `${i.quantity}x ${i.dish.name}`).join('\n');
+                    const text = items.map(i => `${i.quantity}x ${i.dish.nombre}`).join('\n');
                     navigator.clipboard.writeText(`Mi selección:\n${text}\nTotal: ${totalPrice.toFixed(2)}€`);
                   }}
                   className="flex-1 py-3 px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-xl flex items-center justify-center space-x-2 transition-colors"

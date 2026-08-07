@@ -2,11 +2,12 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Menu, Search, ShoppingBag, ChevronLeft, Moon, Sun } from 'lucide-react';
 import { useSelection } from '../../context/SelectionContext';
 import { useTheme } from '../../context/ThemeContext';
-import { restaurantInfo } from '../../data/mockData';
+import { useRestaurante } from '../../hooks/useRestaurante';
 
 export function PublicLayout() {
   const { totalItems } = useSelection();
   const { theme, toggleTheme } = useTheme();
+  const { restaurante } = useRestaurante();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -26,7 +27,7 @@ export function PublicLayout() {
             </button>
 
             <h1 className="font-display font-bold text-xl text-gray-900 dark:text-white truncate mx-4 flex-1 text-center">
-              {restaurantInfo.name}
+              {restaurante?.nombre || 'Restaurante'}
             </h1>
 
             <div className="flex items-center space-x-1">

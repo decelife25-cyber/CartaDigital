@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockDishes, mockFamilies, type Allergen } from '../../data/mockData';
+import { useRestaurante } from '../../hooks/useRestaurante';
 import { Search as SearchIcon, X, Info } from 'lucide-react';
+import { PLACEHOLDER_DISH_IMAGE } from '../../lib/placeholders';
+import type { Alergeno } from '../../types/database';
 
 export function Search() {
   const navigate = useNavigate();
+  const { platos, familias } = useRestaurante();
   const [query, setQuery] = useState('');
 
   const filteredDishes = useMemo(() => {
@@ -12,26 +15,19 @@ export function Search() {
 
     const lowerQuery = query.toLowerCase();
 
-    return mockDishes.filter(dish => {
-      const family = mockFamilies.find(f => f.id === dish.familyId);
+    return platos.filter(dish => {
+      const family = familias.find(f => f.id === dish.familia_id);
 
-      const matchesName = dish.name.toLowerCase().includes(lowerQuery);
-      const matchesDesc = dish.description.toLowerCase().includes(lowerQuery) ||
-                          dish.shortDescription.toLowerCase().includes(lowerQuery);
-      const matchesFamily = family ? family.name.toLowerCase().includes(lowerQuery) : false;
+      const matchesName = dish.nombre.toLowerCase().includes(lowerQuery);
+      const matchesDesc = dish.descripcion?.toLowerCase().includes(lowerQuery) || false;
+      const matchesFamily = family ? family.nombre.toLowerCase().includes(lowerQuery) : false;
 
       return matchesName || matchesDesc || matchesFamily;
     });
-  }, [query]);
+  }, [query, platos, familias]);
 
-  const getAllergenIcon = (allergen: Allergen) => {
-    const icons: Record<Allergen, string> = {
-      gluten: '🌾', crustaceans: '🦐', eggs: '🥚', fish: '🐟',
-      peanuts: '🥜', soybeans: '🫘', milk: '🥛', nuts: '🌰',
-      celery: '🥬', mustard: '🌭', sesame: '🌱', sulphites: '🍷',
-      lupin: '🌼', molluscs: '🐙'
-    };
-    return icons[allergen] || '⚠️';
+  const getAllergenIcon = (allergen: Alergeno) => {
+    return allergen.sigla || '⚠️';
   };
 
   return (
@@ -83,8 +79,8 @@ export function Search() {
             >
               <div className="w-32 sm:w-40 shrink-0">
                 <img
-                  src={dish.image}
-                  alt={dish.name}
+                  src={dish.foto_url || PLACEHOLDER_DISH_IMAGE}
+                  alt={dish.nombre}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -92,22 +88,22 @@ export function Search() {
               <div className="flex-1 p-4 flex flex-col justify-between">
                 <div>
                   <h3 className="font-display font-bold text-lg text-gray-900 dark:text-white leading-tight mb-1">
-                    {dish.name}
+                    {dish.nombre}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
-                    {dish.shortDescription}
+                    {dish.descripcion}
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between mt-2">
                   <span className="font-semibold text-brand text-lg">
-                    {dish.price.toFixed(2)}€
+                    {(dish.precio || 0).toFixed(2)}€
                   </span>
 
                   <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-lg">
-                    {dish.allergens.length > 0 ? (
-                      dish.allergens.map(a => (
-                        <span key={a} title={a} className="text-sm">
+                    {dish.alergenos.length > 0 ? (
+                      dish.alergenos.map(a => (
+                        <span key={a.id} title={a.nombre} className="text-sm">
                           {getAllergenIcon(a)}
                         </span>
                       ))
